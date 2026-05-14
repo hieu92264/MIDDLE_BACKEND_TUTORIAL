@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })
+    ->withCommands()
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (HttpResponse $response, Throwable $exception, Request $request) {
             $apiPrefix = trim((string) config('app.api_prefix', 'api'), '/');
