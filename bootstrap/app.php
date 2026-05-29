@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Helpers\LocaleHelper;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -28,11 +30,14 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->appendToGroup('web', SetLocale::class);
+        $middleware->appendToGroup('api', SetLocale::class);
     })
     ->withCommands()
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (HttpResponse $response, Throwable $exception, Request $request) {
+            LocaleHelper::apply($request);
+
             $apiPrefix = trim((string) config('app.api_prefix', 'api'), '/');
             $isApiRequest = $request->is($apiPrefix) || $request->is($apiPrefix.'/*');
 
@@ -52,14 +57,14 @@ return Application::configure(basePath: dirname(__DIR__))
             };
 
             $message = match (true) {
-                $exception instanceof ValidationException => 'Dữ liệu gửi lên không hợp lệ.',
-                $exception instanceof AuthenticationException => 'Bạn chưa đăng nhập.',
-                $exception instanceof AuthorizationException => 'Bạn không có quyền truy cập.',
-                $exception instanceof ModelNotFoundException => 'Không tìm thấy dữ liệu.',
-                $statusCode === HttpResponse::HTTP_NOT_FOUND => 'Không tìm thấy tài nguyên.',
-                $statusCode === HttpResponse::HTTP_METHOD_NOT_ALLOWED => 'Phương thức truy cập không hợp lệ.',
-                $statusCode >= HttpResponse::HTTP_INTERNAL_SERVER_ERROR => 'Lỗi máy chủ.',
-                default => $exception->getMessage() ?: 'Có lỗi xảy ra.',
+                $exception instanceof ValidationException => __('global.errors.validation_failed'),
+                $exception instanceof AuthenticationException => __('global.errors.unauthenticated'),
+                $exception instanceof AuthorizationException => __('global.errors.forbidden'),
+                $exception instanceof ModelNotFoundException => __('global.errors.model_not_found'),
+                $statusCode === HttpResponse::HTTP_NOT_FOUND => __('global.errors.route_not_found'),
+                $statusCode === HttpResponse::HTTP_METHOD_NOT_ALLOWED => __('global.errors.method_not_allowed'),
+                $statusCode >= HttpResponse::HTTP_INTERNAL_SERVER_ERROR => __('global.errors.server_error'),
+                default => $exception->getMessage() ?: __('global.errors.generic'),
             };
 
             $metadata = $exception instanceof ValidationException ? $exception->errors() : null;
@@ -85,6 +90,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 $payload['stack'] = $exception->getTraceAsString();
             }
 
-            return response()->json($payload, $statusCode);
+            return response()
+                ->json($payload, $statusCode)
+                ->header('Content-Language', app()->currentLocale());
         });
     })->create();
