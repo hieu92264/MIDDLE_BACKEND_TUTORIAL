@@ -22,7 +22,7 @@ class AuthController extends Controller
 
         return $this->success(
             metadata: $this->authService->register($data),
-            message: 'Dang ky thanh cong',
+            message: __('auth.responses.register_success'),
             statusCode: 201
         );
     }
@@ -33,7 +33,7 @@ class AuthController extends Controller
 
         return $this->success(
             metadata: $this->authService->login($data),
-            message: 'Dang nhap thanh cong'
+            message: __('auth.responses.login_success')
         );
     }
 
@@ -41,7 +41,7 @@ class AuthController extends Controller
     {
         $this->authService->logout();
 
-        return $this->success(message: 'Dang xuat thanh cong');
+        return $this->success(message: __('auth.responses.logout_success'));
     }
 
     public function me(): JsonResponse
@@ -53,7 +53,7 @@ class AuthController extends Controller
     {
         return $this->success(
             metadata: $this->authService->refresh(),
-            message: 'Lam moi token thanh cong'
+            message: __('auth.responses.refresh_success')
         );
     }
 }

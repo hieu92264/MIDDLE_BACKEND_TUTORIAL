@@ -57,3 +57,28 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Postman
+
+- Generate collection and environment files from the current Laravel routes:
+
+```bash
+php artisan postman:export
+```
+
+- Or use the Composer shortcut:
+
+```bash
+composer postman
+```
+
+- Generated files:
+  - `postman/collections/laravel-api.postman_collection.json`
+  - `postman/environments/local.postman_environment.json`
+
+- Git + branch workflow in Postman:
+  - Connect the repo root `middle_laravel` in Postman Desktop using Native Git / local Git repo.
+  - Import the files above into the workspace once, or import them directly from the repo/branch.
+  - Because the collection files live inside Git, switching branch in Postman or in Git gives you the collection version for that branch.
+
+- Re-run `php artisan postman:export` whenever routes or request payloads change so the collection stays in sync with the branch code.

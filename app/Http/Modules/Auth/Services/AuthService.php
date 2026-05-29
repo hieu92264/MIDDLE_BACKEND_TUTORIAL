@@ -35,7 +35,7 @@ class AuthService implements AuthServiceInterface
 
         if (! $user || ! $user->is_active || ! Hash::check($credentials->password, $user->password)) {
             throw ValidationException::withMessages([
-                'login' => ['Thong tin dang nhap khong chinh xac.'],
+                'login' => [__('auth.errors.invalid_credentials')],
             ]);
         }
 

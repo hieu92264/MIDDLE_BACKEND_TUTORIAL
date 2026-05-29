@@ -10,12 +10,12 @@ trait ApiResponse
 {
     protected function apiResponse(
         mixed $metadata = null,
-        string $message = 'Thành công',
+        ?string $message = null,
         int $statusCode = Response::HTTP_OK,
         ?Throwable $exception = null
     ): JsonResponse {
         $payload = [
-            'message' => $message,
+            'message' => $message ?? __('global.responses.success'),
             'status_code' => $statusCode,
             'metadata' => $metadata,
             'path' => request()->getPathInfo(),
@@ -37,7 +37,7 @@ trait ApiResponse
 
     protected function success(
         mixed $metadata = null,
-        string $message = 'Thành công',
+        ?string $message = null,
         int $statusCode = Response::HTTP_OK
     ): JsonResponse {
         return $this->apiResponse($metadata, $message, $statusCode);
@@ -45,10 +45,15 @@ trait ApiResponse
 
     protected function error(
         mixed $metadata = null,
-        string $message = 'Có lỗi xảy ra',
+        ?string $message = null,
         int $statusCode = Response::HTTP_BAD_REQUEST,
         ?Throwable $exception = null
     ): JsonResponse {
-        return $this->apiResponse($metadata, $message, $statusCode, $exception);
+        return $this->apiResponse(
+            $metadata,
+            $message ?? __('global.errors.generic'),
+            $statusCode,
+            $exception
+        );
     }
 }
