@@ -159,6 +159,7 @@ class ExportPostmanCollectionCommand extends Command
             $folder = $this->resolveFolderName($route);
             $requiresAuth = $this->routeRequiresAuth($route);
             $body = $this->buildRequestBody($route);
+            $events = $this->buildRequestEvents($route);
             $rawUrl = '{{base_url}}/'.$this->normalizeUriForPostman($route->uri());
             $headers = [
                 [
@@ -178,6 +179,7 @@ class ExportPostmanCollectionCommand extends Command
 
             $request = [
                 'name' => $this->resolveRequestName($route, $method),
+                'event' => $events,
                 'request' => array_filter([
                     'method' => $method,
                     'header' => $headers,
@@ -203,7 +205,7 @@ class ExportPostmanCollectionCommand extends Command
 
             $items[] = [
                 'folder' => $folder,
-                'request' => $request,
+                'request' => array_filter($request, fn ($value): bool => $value !== null),
             ];
         }
 
@@ -488,6 +490,50 @@ class ExportPostmanCollectionCommand extends Command
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>|null
+     */
+    protected function buildRequestEvents(IlluminateRoute $route): ?array
+    {
+        $actionMethod = Str::lower((string) $this->resolveControllerMethod($route));
+
+        return match ($actionMethod) {
+            'login', 'register', 'refresh' => [$this->makeTestEvent([
+                'let payload = null;',
+                'try {',
+                '    payload = pm.response.json();',
+                '} catch (error) {',
+                "    console.warn('Response is not valid JSON.', error);",
+                '}',
+                '',
+                'const token = payload && payload.metadata ? payload.metadata.access_token : null;',
+                '',
+                'if (token) {',
+                "    pm.environment.set('jwt_token', token);",
+                '}',
+            ])],
+            'logout' => [$this->makeTestEvent([
+                "pm.environment.set('jwt_token', '');",
+            ])],
+            default => null,
+        };
+    }
+
+    /**
+     * @param  array<int, string>  $scriptLines
+     * @return array<string, mixed>
+     */
+    protected function makeTestEvent(array $scriptLines): array
+    {
+        return [
+            'listen' => 'test',
+            'script' => [
+                'type' => 'text/javascript',
+                'exec' => $scriptLines,
+            ],
+        ];
     }
 
     protected function primaryMethod(IlluminateRoute $route): string

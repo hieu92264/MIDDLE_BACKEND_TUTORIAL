@@ -53,19 +53,26 @@ class PostmanExportCommandTest extends TestCase
 
         $loginRequest = collect($authFolder['item'])->firstWhere('name', 'Login');
         $registerRequest = collect($authFolder['item'])->firstWhere('name', 'Register');
+        $refreshRequest = collect($authFolder['item'])->firstWhere('name', 'Refresh');
         $logoutRequest = collect($authFolder['item'])->firstWhere('name', 'Logout');
 
         $this->assertSame('POST', $loginRequest['request']['method']);
         $this->assertSame('{{base_url}}/api/v1/auth/login', $loginRequest['request']['url']['raw']);
         $this->assertArrayNotHasKey('auth', $loginRequest['request']);
+        $this->assertSame('test', $loginRequest['event'][0]['listen']);
+        $this->assertContains("    pm.environment.set('jwt_token', token);", $loginRequest['event'][0]['script']['exec']);
 
         $registerBody = json_decode($registerRequest['request']['body']['raw'], true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame('demo_user', $registerBody['username']);
         $this->assertSame('user@example.com', $registerBody['email']);
         $this->assertSame('secret123', $registerBody['password']);
         $this->assertSame('secret123', $registerBody['password_confirmation']);
+        $this->assertContains("    pm.environment.set('jwt_token', token);", $registerRequest['event'][0]['script']['exec']);
+
+        $this->assertContains("    pm.environment.set('jwt_token', token);", $refreshRequest['event'][0]['script']['exec']);
 
         $this->assertSame('bearer', $logoutRequest['request']['auth']['type']);
         $this->assertSame('{{jwt_token}}', $logoutRequest['request']['auth']['bearer'][0]['value']);
+        $this->assertContains("pm.environment.set('jwt_token', '');", $logoutRequest['event'][0]['script']['exec']);
     }
 }
