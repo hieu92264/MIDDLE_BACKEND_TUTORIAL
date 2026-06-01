@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Modules\Auth\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class AuthRoutesTest extends TestCase
@@ -116,5 +117,74 @@ class AuthRoutesTest extends TestCase
             ->assertNotFound()
             ->assertHeader('Content-Language', 'en')
             ->assertJsonPath('message', 'Route or resource not found.');
+    }
+
+    public function test_core_tables_have_base_metadata_columns(): void
+    {
+        foreach ([
+            'users',
+            'password_reset_tokens',
+            'sessions',
+            'cache',
+            'cache_locks',
+            'jobs',
+            'job_batches',
+            'failed_jobs',
+            'personal_access_tokens',
+        ] as $tableName) {
+            $this->assertTrue(
+                Schema::hasColumns($tableName, [
+                    'is_active',
+                    'user_name_created',
+                    'user_name_updated',
+                ]),
+                "Table [{$tableName}] is missing one or more base metadata columns."
+            );
+        }
+    }
+
+    public function test_user_model_populates_audit_columns_from_authenticated_actor(): void
+    {
+        $actor = User::query()->create([
+            'username' => 'actor',
+            'email' => 'actor@example.com',
+            'password' => 'secret123',
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($actor);
+
+        $target = User::query()->create([
+            'username' => 'created-user',
+            'email' => 'created-user@example.com',
+            'password' => 'secret123',
+            'role' => 'user',
+        ]);
+
+        $this->assertSame(true, $target->is_active);
+        $this->assertNotNull($target->created_at);
+        $this->assertSame($actor->id, $target->user_name_created);
+        $this->assertNotNull($target->updated_at);
+        $this->assertSame($actor->id, $target->user_name_updated);
+
+        $editor = User::query()->create([
+            'username' => 'editor',
+            'email' => 'editor@example.com',
+            'password' => 'secret123',
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($editor);
+
+        $target->update([
+            'role' => 'moderator',
+        ]);
+
+        $target->refresh();
+
+        $this->assertNotNull($target->created_at);
+        $this->assertSame($actor->id, $target->user_name_created);
+        $this->assertNotNull($target->updated_at);
+        $this->assertSame($editor->id, $target->user_name_updated);
     }
 }

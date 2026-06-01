@@ -2,16 +2,17 @@
 
 namespace App\Core\Bases;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 abstract class BaseModel extends Model
 {
+    use HasBaseMetadata;
+
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
 
-    public function scopeActive(Builder $query): Builder
+    protected function casts(): array
     {
-        return $query->where($this->qualifyColumn('is_active'), true);
+        return $this->baseMetadataCasts();
     }
 }

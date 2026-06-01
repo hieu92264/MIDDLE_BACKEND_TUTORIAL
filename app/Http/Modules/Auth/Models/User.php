@@ -3,6 +3,7 @@
 namespace App\Http\Modules\Auth\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Core\Bases\HasBaseMetadata;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasBaseMetadata, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -22,7 +23,6 @@ class User extends Authenticatable implements JWTSubject
      * @var list<string>
      */
     protected $fillable = [
-        'is_active',
         'username',
         'email',
         'password',
@@ -46,10 +46,10 @@ class User extends Authenticatable implements JWTSubject
      */
     protected function casts(): array
     {
-        return [
+        return array_merge($this->baseMetadataCasts(), [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-        ];
+        ]);
     }
 
     /**

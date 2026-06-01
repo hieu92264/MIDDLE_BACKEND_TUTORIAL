@@ -13,19 +13,20 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->boolean('is_active')->default(true);
             $table->string('username')->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('role')->nullable();
             $table->rememberToken();
+            $table->baseMetadataColumns();
             $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
+            $table->baseMetadataColumns();
             $table->timestamp('created_at')->nullable();
         });
 
@@ -36,6 +37,7 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
+            $table->baseMetadataColumns();
         });
     }
 
